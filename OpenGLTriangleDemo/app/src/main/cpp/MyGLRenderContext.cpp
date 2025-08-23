@@ -22,6 +22,7 @@ void MyGLRenderContext::SetImageData(int format, int width, int height, uint8_t 
 void MyGLRenderContext::OnSurfaceCreated() {
     LOGI("OnSurfaceCreated");
     glClearColor(1.0f, 1.0f, 0.5f, 1.0f);
+    m_Sample.Init();
 }
 
 void MyGLRenderContext::OnSurfaceChanged(int width, int height) {
@@ -31,6 +32,8 @@ void MyGLRenderContext::OnSurfaceChanged(int width, int height) {
 
 void MyGLRenderContext::OnDrawFrame() {
     LOGI("OnDrawFrame");
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    m_Sample.Draw();
 }
 
 MyGLRenderContext *MyGLRenderContext::GetInstance() {

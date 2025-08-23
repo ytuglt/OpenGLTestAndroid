@@ -6,15 +6,16 @@
 #define OPENGL_TRIANGLE_DEMO_TRIANGLESAMPLE_H
 
 #include <GLES3/gl3.h>
-//#include "../util/LogUtil.h"
+#include "../util/LogUtil.h"
+#include "../util/GLUtils.h"
 
 class TriangleSample {
 public:
     TriangleSample();
     ~TriangleSample();
 
-//    void Init();
-//    void Draw();
+    void Init();
+    void Draw();
 
 private:
     GLuint m_ProgramObj;

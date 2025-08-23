@@ -30,7 +30,7 @@ public:
 
 private:
     static MyGLRenderContext* mInstance;
-//    TriangleSample m_Sample;
+    TriangleSample m_Sample;
 };
 
 

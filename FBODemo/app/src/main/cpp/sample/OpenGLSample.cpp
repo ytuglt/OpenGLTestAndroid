@@ -187,12 +187,13 @@ void OpenGLSample::Init() {
 
 void OpenGLSample::Draw(int screenWidth, int screenHeight) {
     // FBO render
-    LOGI("OpenGLSample Draw screenWidth = %d, screenHeight = %d ", screenWidth, screenHeight);
+    LOGI("OpenGLSample Draw screenWidth = %d, screenHeight = %d , image width = %d, image height = %d",
+         screenWidth, screenHeight, m_RenderImage.width, m_RenderImage.height);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glViewport(0, 0, m_RenderImage.width, m_RenderImage.height);
     GO_CHECK_GL_ERROR();
-    glViewport(0, 0, screenWidth, screenHeight);
-    GO_CHECK_GL_ERROR();
-    // do fbo off screen rendering
+    
+    // do fbo off screen rendering - use image dimensions for FBO viewport
     glBindFramebuffer(GL_FRAMEBUFFER, m_FboId);
     GO_CHECK_GL_ERROR();
     glUseProgram(m_FboProgramObj);
@@ -211,7 +212,7 @@ void OpenGLSample::Draw(int screenWidth, int screenHeight) {
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // do normal rendering
+    // do normal rendering - use screen dimensions for final render
     glViewport(0, 0, screenWidth, screenHeight);
     glUseProgram(m_ProgramObj);
     GO_CHECK_GL_ERROR();

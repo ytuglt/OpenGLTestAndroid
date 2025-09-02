@@ -76,6 +76,210 @@ const char fShaderStr1[] = R"(
     }
 )";
 
+const char fShaderStr2[] = R"(
+    #version 300 es
+    precision highp float;
+    layout(location = 0) out vec4 outColor;
+    in vec2 vTexCoord;
+    uniform sampler2D sTextureMap;
+    uniform vec2 uTexSize;
+
+    void main() {
+        float size = uTexSize.x / 10.0;
+        float radius = size * 0.5;
+        vec2 fragCoord = vTexCoord * uTexSize.xy;
+        vec2 quadPos = floor(fragCoord.xy / size) * size;
+        vec2 quad = quadPos / uTexSize.xy;
+        vec2 quadCenter = (quadPos + size/2.0);
+        float dist = length(quadCenter - fragCoord.xy);
+        if (dist < radius) {
+            outColor = texture(sTextureMap, vTexCoord);
+        } else {
+            outColor = vec4(1.0, 0.0, 0.0, 1.0);
+        }
+    }
+)";
+
+const char fShaderStr3[] = R"(
+    #version 300 es
+    precision highp float;
+    layout(location = 0) out vec4 outColor;
+    in vec2 vTexCoord;
+    uniform lowp sampler2D sTextureMap;
+    uniform vec2 uTexSize;
+
+    void main() {
+        float radius = 600.0;
+        float angle = 0.8;
+        vec2 center = vec2(uTexSize. x / 2.0, uTexSize.y / 2.0);
+        vec2 tc = vTexCoord * uTexSize;
+        tc -= center;
+        float dist = length(tc);
+        if (dist < radius) {
+            float percent = (radius - dist)  / radius;
+            float theta = percent * percent * angle * 8.0;
+            float s = sin(theta);
+            float c = cos(theta);
+            tc = vec2(dot(tc, vec2(c, -s)), dot(tc, vec2(s, c)));
+        }
+        tc += center;
+        outColor = texture(sTextureMap, tc / uTexSize);
+    }
+)";
+
+const char fShaderStr4[] =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "layout(location = 0) out vec4 outColor;\n"
+        "in vec2 vTexCoord;\n"
+        "uniform lowp sampler2D sTextureMap;\n"
+        "uniform vec2 uTexSize;\n"
+        "void main() {\n"
+        "    vec2 pos = vTexCoord.xy;\n"
+        "    vec2 onePixel = vec2(1, 1) / uTexSize;\n"
+        "    vec4 color = vec4(0);\n"
+        "    mat3 edgeDetectionKernel = mat3(\n"
+        "    -1, -1, -1,\n"
+        "    -1, 8, -1,\n"
+        "    -1, -1, -1\n"
+        "    );\n"
+        "    for(int i = 0; i < 3; i++) {\n"
+        "        for(int j = 0; j < 3; j++) {\n"
+        "            vec2 samplePos = pos + vec2(i - 1 , j - 1) * onePixel;\n"
+        "            vec4 sampleColor = texture(sTextureMap, samplePos);\n"
+        "            sampleColor *= edgeDetectionKernel[i][j];\n"
+        "            color += sampleColor;\n"
+        "        }\n"
+        "    }\n"
+        "    outColor = vec4(color.rgb, 1.0);\n"
+        "}";
+// 放大
+const char fShaderStr5[] =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "layout(location = 0) out vec4 outColor;\n"
+        "in vec2 vTexCoord;\n"
+        "uniform sampler2D sTextureMap;\n"
+        "uniform vec2 uTexSize;\n"
+        "\n"
+        "vec2 warpPositionToUse(vec2 centerPostion, vec2 currentPosition, float radius, float scaleRatio, float aspectRatio)\n"
+        "{\n"
+        "    vec2 positionToUse = currentPosition;\n"
+        "    vec2 currentPositionToUse = vec2(currentPosition.x, currentPosition.y * aspectRatio + 0.5 - 0.5 * aspectRatio);\n"
+        "    vec2 centerPostionToUse = vec2(centerPostion.x, centerPostion.y * aspectRatio + 0.5 - 0.5 * aspectRatio);\n"
+        "    //float r = distance(currentPositionToUse, centerPostionToUse);\n"
+        "    float r = distance(currentPosition, centerPostion);\n"
+        "    if(r < radius)\n"
+        "    {\n"
+        "        float alpha = 1.0 - scaleRatio * pow(r / radius - 1.0, 2.0);\n"
+        "        positionToUse = centerPostion + alpha * (currentPosition - centerPostion);\n"
+        "    }\n"
+        "    return positionToUse;\n"
+        "}\n"
+        "\n"
+        "void main() {\n"
+        "    vec2 centerPostion = vec2(0.5, 0.5);\n"
+        "    float radius = 0.34;\n"
+        "    float scaleRatio = 1.0;\n"
+        "    float aspectRatio = uTexSize.x / uTexSize.y;\n"
+        "    outColor = texture(sTextureMap, warpPositionToUse(centerPostion, vTexCoord, radius, scaleRatio, aspectRatio));\n"
+        "}";
+
+const char fShaderStr6[] =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "layout(location = 0) out vec4 outColor;\n"
+        "in vec2 vTexCoord;\n"
+        "uniform sampler2D sTextureMap;\n"
+        "uniform vec2 uTexSize;\n"
+        "\n"
+        "vec2 reshape(vec2 src, vec2 dst, vec2 curPos, float radius)\n"
+        "{\n"
+        "    vec2 pos = curPos;\n"
+        "\n"
+        "    float r = distance(curPos, src);\n"
+        "\n"
+        "    if (r < radius)\n"
+        "    {\n"
+        "        float alpha = 1.0 -  r / radius;\n"
+        "        vec2 displacementVec = (dst - src) * pow(alpha, 2.0);\n"
+        "        pos = curPos - displacementVec;\n"
+        "\n"
+        "    }\n"
+        "    return pos;\n"
+        "}\n"
+        "\n"
+        "void main() {\n"
+        "    vec2 srcPos = vec2(0.5, 0.5);\n"
+        "    vec2 dstPos = vec2(0.6, 0.5);\n"
+        "    float radius = 0.18;\n"
+        "    float scaleRatio = 1.0;\n"
+        "    float aspectRatio = uTexSize.x / uTexSize.y;\n"
+        "    \n"
+        "    if(radius <= distance(vTexCoord, srcPos) && distance(vTexCoord, srcPos) <= radius + 0.008)\n"
+        "    {\n"
+        "        outColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
+        "    } \n"
+        "    else\n"
+        "    {\n"
+        "        outColor = texture(sTextureMap, reshape(srcPos, dstPos, vTexCoord, radius));\n"
+        "    }\n"
+        "}";
+
+// 形变
+const char fShaderStr7[] =
+        "#version 300 es\n"
+        "precision highp float;\n"
+        "layout(location = 0) out vec4 outColor;\n"
+        "in vec2 vTexCoord;\n"
+        "uniform sampler2D sTextureMap;\n"
+        "uniform vec2 uTexSize;\n"
+        "\n"
+        "float distanceTex(vec2 pos0, vec2 pos1, float aspectRatio)\n"
+        "{\n"
+        "    vec2 newPos0 = vec2(pos0.x, pos0.y * aspectRatio + 0.5 - 0.5 * aspectRatio);\n"
+        "    vec2 newPos1 = vec2(pos1.x, pos1.y * aspectRatio + 0.5 - 0.5 * aspectRatio);\n"
+        "    return distance(newPos0, newPos1);\n"
+        "}\n"
+        "\n"
+        "vec2 reshape(vec2 src, vec2 dst, vec2 curPos, float radius, float aspectRatio)\n"
+        "{\n"
+        "    vec2 pos = curPos;\n"
+        "\n"
+        "    vec2 newSrc = vec2(src.x, src.y * aspectRatio + 0.5 - 0.5 * aspectRatio);\n"
+        "    vec2 newDst = vec2(dst.x, dst.y * aspectRatio + 0.5 - 0.5 * aspectRatio);\n"
+        "    vec2 newCur = vec2(curPos.x, curPos.y * aspectRatio + 0.5 - 0.5 * aspectRatio);\n"
+        "\n"
+        "\n"
+        "    float r = distance(newSrc, newCur);\n"
+        "\n"
+        "    if (r < radius)\n"
+        "    {\n"
+        "        float alpha = 1.0 -  r / radius;\n"
+        "        vec2 displacementVec = (dst - src) * pow(alpha, 1.7);\n"
+        "        pos = curPos - displacementVec;\n"
+        "\n"
+        "    }\n"
+        "    return pos;\n"
+        "}\n"
+        "\n"
+        "void main() {\n"
+        "    vec2 srcPos = vec2(0.5, 0.5);\n"
+        "    vec2 dstPos = vec2(0.55, 0.55);\n"
+        "    float radius = 0.30;\n"
+        "    float scaleRatio = 1.0;\n"
+        "    float aspectRatio = uTexSize.y/uTexSize.x;\n"
+        "\n"
+        "    if(radius <= distanceTex(vTexCoord, srcPos, aspectRatio) && distanceTex(vTexCoord, srcPos, aspectRatio) <= radius + 0.008)\n"
+        "    {\n"
+        "        outColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
+        "    }\n"
+        "    else\n"
+        "    {\n"
+        "        outColor = texture(sTextureMap, reshape(srcPos, dstPos, vTexCoord, radius, aspectRatio));\n"
+        "    }\n"
+        "}";
+
 // vertex coordinate
 const GLfloat vVertices[] = {
         -1.0f, -1.0f, 0.0f,
@@ -138,11 +342,11 @@ void EGLRender::Init() {
 
     m_fShaderStrs[0] = fShaderStr0;
     m_fShaderStrs[1] = fShaderStr1;
-    m_fShaderStrs[2] = fShaderStr0;
-    m_fShaderStrs[3] = fShaderStr0;
-    m_fShaderStrs[4] = fShaderStr0;
-    m_fShaderStrs[5] = fShaderStr0;
-    m_fShaderStrs[6] = fShaderStr0;
+    m_fShaderStrs[2] = fShaderStr2;
+    m_fShaderStrs[3] = fShaderStr3;
+    m_fShaderStrs[4] = fShaderStr4;
+    m_fShaderStrs[5] = fShaderStr5;
+    m_fShaderStrs[6] = fShaderStr6;
 
     glGenTextures(1, &m_ImageTextureId);
     glBindTexture(GL_TEXTURE_2D, m_ImageTextureId);

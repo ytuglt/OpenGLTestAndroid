@@ -4,12 +4,17 @@ import android.content.Context;
 import android.opengl.GLSurfaceView;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
+
+import androidx.annotation.NonNull;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-public class MyGLSurfaceView extends GLSurfaceView {
+public class MyGLSurfaceView extends GLSurfaceView implements ScaleGestureDetector.OnScaleGestureListener {
     private static final String TAG = "MyGLSurfaceView";
+    private final float TOUCH_SCALE_FACTOR = 180.0f / 320;
 
     public static final int IMAGE_FORMAT_RGBA = 0x01;
     public static final int IMAGE_FORMAT_NV21 = 0x02;
@@ -26,6 +31,19 @@ public class MyGLSurfaceView extends GLSurfaceView {
     private int mRatioWidth = 0;
     private int mRatioHeight = 0;
 
+    private long mLastMultiTouchTime;
+
+    private float mPreviousY;
+    private float mPreviousX;
+
+    private ScaleGestureDetector mScaleGestureDetector;
+
+    private float mPreScale = 1.0f;
+    private float mCurScale = 1.0f;
+
+    private int mXAngle;
+    private int mYAngle;
+
     public MyGLSurfaceView(Context context) {
         this(context, null);
     }
@@ -37,6 +55,7 @@ public class MyGLSurfaceView extends GLSurfaceView {
         myGLRender = new MyGLRender(mNativeRender);
         setRenderer(myGLRender);
         setRenderMode(RENDERMODE_CONTINUOUSLY);
+        mScaleGestureDetector = new ScaleGestureDetector(context, this);
     }
 
     public void setAspectRatio(int width, int height) {
@@ -62,8 +81,68 @@ public class MyGLSurfaceView extends GLSurfaceView {
         }
     }
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getPointerCount() == 1) {
+            long currentTimeMillis = System.currentTimeMillis();
+            if (currentTimeMillis - mLastMultiTouchTime > 200) {
+                float x = event.getX();
+                float y = event.getY();
+
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_MOVE:
+                        float dy = y - mPreviousY;
+                        float dx = x - mPreviousX;
+
+                        mYAngle += dx * TOUCH_SCALE_FACTOR;
+                        mXAngle += dy * TOUCH_SCALE_FACTOR;
+                }
+
+                mPreviousY = y;
+                mPreviousX = x;
+
+                mNativeRender.native_UpdateTransformMatrix(mXAngle, mYAngle, mCurScale, mCurScale);
+                requestRender();
+            }
+            return true;
+        } else {
+            mScaleGestureDetector.onTouchEvent(event);
+        }
+
+        return true;
+    }
+
     public MyNativeRender getNativeRender() {
         return mNativeRender;
+    }
+
+    @Override
+    public boolean onScale(@NonNull ScaleGestureDetector detector) {
+        float preSpan = detector.getPreviousSpan();
+        float curSpan = detector.getCurrentSpan();
+
+        if (curSpan < preSpan) {
+            mCurScale = mPreScale - (preSpan-curSpan) / 200;
+        } else {
+            mCurScale = mPreScale + (curSpan-preSpan) / 200;
+        }
+
+        mCurScale = Math.max(0.05f, Math.min(mCurScale, 80.0f));
+
+        mNativeRender.native_UpdateTransformMatrix(mXAngle, mYAngle, mCurScale, mCurScale);
+        requestRender();
+        return false;
+    }
+
+    @Override
+    public boolean onScaleBegin(@NonNull ScaleGestureDetector detector) {
+        return true;
+    }
+
+    @Override
+    public void onScaleEnd(@NonNull ScaleGestureDetector detector) {
+        mPreScale = mCurScale;
+        mLastMultiTouchTime = System.currentTimeMillis();
     }
 
     public static class MyGLRender implements Renderer {

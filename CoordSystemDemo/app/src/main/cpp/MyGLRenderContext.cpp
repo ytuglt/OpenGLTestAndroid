@@ -55,6 +55,11 @@ void MyGLRenderContext::OnDrawFrame() {
     m_Sample.Draw(m_ScreenWidth, m_ScreenHeight);
 }
 
+void MyGLRenderContext::UpdateTransformMatrix(float rotateX, float rotateY, float scaleX, float scaleY)
+{
+    m_Sample.UpdateTransformMatrix(rotateX, rotateY, scaleX, scaleY);
+}
+
 MyGLRenderContext *MyGLRenderContext::GetInstance() {
     if (mInstance == nullptr) {
         mInstance = new MyGLRenderContext();

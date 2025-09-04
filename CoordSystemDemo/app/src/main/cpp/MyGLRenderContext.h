@@ -18,6 +18,7 @@ public:
     void OnSurfaceCreated();
     void OnSurfaceChanged(int width, int height);
     void OnDrawFrame();
+    void UpdateTransformMatrix(float rotateX, float rotateY, float scaleX, float scaleY);
 
     static MyGLRenderContext* GetInstance();
     static void DestroyInstance();

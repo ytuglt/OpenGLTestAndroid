@@ -18,4 +18,6 @@ public class MyNativeRender {
 
     public native void native_OnDrawFrame();
 
+    public native void native_UpdateTransformMatrix(float rotateX, float rotateY, float scaleX, float scaleY);
+
 }

@@ -45,6 +45,18 @@ JNIEXPORT void JNICALL native_OnDrawFrame(JNIEnv *env, jobject instance) {
 //    LOGI("native_OnDrawFrame");
     MyGLRenderContext::GetInstance()->OnDrawFrame();
 }
+
+/*
+ * Class:     com_byteflow_app_MyNativeRender
+ * Method:    native_UpdateTransformMatrix
+ * Signature: (FFFF)V
+ */
+JNIEXPORT void JNICALL native_UpdateTransformMatrix(JNIEnv *env, jobject instance, jfloat rotateX, jfloat rotateY, jfloat scaleX, jfloat scaleY)
+{
+    MyGLRenderContext::GetInstance()->UpdateTransformMatrix(rotateX, rotateY, scaleX, scaleY);
+}
+
+
 // -----------------------------------------------------------------------------------------
 /*
  * Class:     com_byteflow_app_egl_NativeBgRender
@@ -117,6 +129,8 @@ static JNINativeMethod  g_RenderMethods[] = {
         {"native_OnSurfaceCreated", "()V", (void*) native_OnSurfaceCreated},
         {"native_OnSurfaceChanged", "(II)V", (void*) native_OnSurfaceChanged},
         {"native_OnDrawFrame", "()V", (void*) native_OnDrawFrame},
+        {"native_UpdateTransformMatrix",     "(FFFF)V",   (void *)(native_UpdateTransformMatrix)},
+
 };
 
 static JNINativeMethod g_BgRenderMethods[] = {
